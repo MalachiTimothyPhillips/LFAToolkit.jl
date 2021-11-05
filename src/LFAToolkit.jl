@@ -43,6 +43,7 @@ export Operator,
 export IdentityPC
 export Jacobi
 export Schwarz
+export ChebSchwarz, seteigenvalueestimatescalingchebschwarz
 export Chebyshev, seteigenvalueestimatescaling
 # -- multigrid
 export Multigrid, PMultigrid, HMultigrid
@@ -70,6 +71,7 @@ include("PC/Identity.jl")
 include("PC/Jacobi.jl")
 include("PC/Schwarz.jl")
 include("PC/Chebyshev.jl")
+include("PC/ChebSchwarz.jl")
 # -- multigrid
 include("PC/Multigrid/Base.jl")
 include("PC/Multigrid/Constructors.jl")
