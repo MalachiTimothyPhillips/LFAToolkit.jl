@@ -69,7 +69,7 @@ mutable struct Schwarz <: AbstractPreconditioner
     operator::Operator
 
     # data empty until assembled
-    operatordiagonalinverse::AbstractArray{Float64}
+    operatorinverse::AbstractArray{Float64}
 
     # inner constructor
     Schwarz(operator::Operator) = new(operator)
@@ -86,7 +86,7 @@ Base.show(io::IO, preconditioner::Schwarz) = print(io, "schwarz preconditioner")
 
 """
 ```julia
-getoperatordiagonalinverse(preconditioner)
+getoperatorinverse(preconditioner)
 ```
 
 Compute or retrieve the inverse of the symbol matrix diagonal for a Schwarz
@@ -105,8 +105,8 @@ diffusion = GalleryOperator("diffusion", 3, 3, mesh);
 schwarz = Schwarz(diffusion)
 
 # note: either syntax works
-diagonalinverse = LFAToolkit.getoperatordiagonalinverse(schwarz);
-diagonalinverse = schwarz.operatordiagonalinverse;
+diagonalinverse = LFAToolkit.getoperatorinverse(schwarz);
+diagonalinverse = schwarz.operatorinverse;
 
 # verify
 @assert diagonalinverse ≈ [6/7 0; 0 3/4]
@@ -115,18 +115,23 @@ diagonalinverse = schwarz.operatordiagonalinverse;
 
 ```
 """
-function getoperatordiagonalinverse(preconditioner::Schwarz)
+function getoperatorinverse(preconditioner::Schwarz)
     # assemble if needed
-    if !isdefined(preconditioner, :operatordiagonalinverse)
-        # retrieve diagonal and invert
-        diagonalinverse = preconditioner.operator.diagonal^-1
+    if !isdefined(preconditioner, :operatorinverse)
+        rowmodemap = preconditioner.operator.rowmodemap
+        columnmodemap = preconditioner.operator.columnmodemap
+        elementmatrix = preconditioner.operator.elementmatrix
 
-        # store
-        preconditioner.operatordiagonalinverse = diagonalinverse
+        assembledOp = rowmodemap * elementmatrix * columnmodemap
+
+        denseOp = Matrix(assembledOp)
+        invOp = pinv(denseOp) # Neumann operator
+
+        preconditioner.operatorinverse = sparse(invOp)
     end
 
     # return
-    return getfield(preconditioner, :operatordiagonalinverse)
+    return getfield(preconditioner, :operatorinverse)
 end
 
 # ------------------------------------------------------------------------------
@@ -134,8 +139,8 @@ end
 # ------------------------------------------------------------------------------
 
 function Base.getproperty(preconditioner::Schwarz, f::Symbol)
-    if f == :operatordiagonalinverse
-        return getoperatordiagonalinverse(preconditioner)
+    if f == :operatorinverse
+        return getoperatorinverse(preconditioner)
     else
         return getfield(preconditioner, f)
     end
@@ -162,7 +167,7 @@ Compute or retrieve the symbol matrix for a Schwarz preconditioned operator
 
 # Arguments:
 - `preconditioner`: Schwarz preconditioner to compute symbol matrix for
-- `ω`:              Smoothing weighting factor array
+- `ω`:              Nothing
 - `θ`:              Fourier mode frequency array (one frequency per dimension)
 
 # Returns:
@@ -188,7 +193,7 @@ for dimension in 1:3
     schwarz = Schwarz(diffusion);
 
     # compute symbols
-    A = computesymbols(schwarz, [1.0], π*ones(dimension));
+    A = computesymbols(schwarz, [], π*ones(dimension));
 
     # verify
     using LinearAlgebra;
@@ -207,16 +212,9 @@ end
 ```
 """
 function computesymbols(preconditioner::Schwarz, ω::Array, θ::Array)
-    # validate number of parameters
-    if length(ω) != 1
-        Throw(error("exactly one parameter required for Schwarz smoothing")) # COV_EXCL_LINE
-    end
-
-    # return
-    return I -
-           ω[1] *
-           preconditioner.operatordiagonalinverse *
-           computesymbols(preconditioner.operator, θ)
+    Minv = preconditioner.operatorinverse
+    A = computesymbols(preconditioner.operator, θ)
+    return I - Minv * A
 end
 
 # ------------------------------------------------------------------------------

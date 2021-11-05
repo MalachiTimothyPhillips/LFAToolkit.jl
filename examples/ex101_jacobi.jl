@@ -2,6 +2,7 @@
 # Jacobi smoother example
 # ------------------------------------------------------------------------------
 
+using LFAToolkit
 using LinearAlgebra
 
 # setup
@@ -17,5 +18,6 @@ jacobi = Jacobi(diffusion)
 # compute operator symbols
 A = computesymbols(jacobi, [1.0], [π, π])
 eigenvalues = real(eigvals(A))
+println(eigenvalues)
 
 # ------------------------------------------------------------------------------
