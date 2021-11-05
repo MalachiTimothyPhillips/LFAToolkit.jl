@@ -42,6 +42,7 @@ export Operator,
 # preconditioners
 export IdentityPC
 export Jacobi
+export Schwarz
 export Chebyshev, seteigenvalueestimatescaling
 # -- multigrid
 export Multigrid, PMultigrid, HMultigrid
@@ -67,6 +68,7 @@ include("Operator/Constructors.jl")
 include("PC/Base.jl")
 include("PC/Identity.jl")
 include("PC/Jacobi.jl")
+include("PC/Schwarz.jl")
 include("PC/Chebyshev.jl")
 # -- multigrid
 include("PC/Multigrid/Base.jl")
