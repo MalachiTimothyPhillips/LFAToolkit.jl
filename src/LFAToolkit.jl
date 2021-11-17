@@ -41,6 +41,7 @@ export Operator,
     GalleryOperator, GalleryVectorOperator, GalleryMacroElementOperator, computesymbols
 # preconditioners
 export IdentityPC
+export NoPreco
 export Jacobi
 export Schwarz
 export ChebSchwarz, seteigenvalueestimatescalingchebschwarz
@@ -68,6 +69,7 @@ include("Operator/Constructors.jl")
 # preconditioners
 include("PC/Base.jl")
 include("PC/Identity.jl")
+include("PC/NoPreco.jl")
 include("PC/Jacobi.jl")
 include("PC/Schwarz.jl")
 include("PC/Chebyshev.jl")
