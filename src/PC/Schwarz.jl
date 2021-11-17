@@ -118,24 +118,8 @@ diagonalinverse = schwarz.operatorinverse;
 function getoperatorinverse(preconditioner::Schwarz)
     # assemble if needed
     if !isdefined(preconditioner, :operatorinverse)
-        rowmodemap = preconditioner.operator.rowmodemap
-        columnmodemap = preconditioner.operator.columnmodemap
         elementmatrix = preconditioner.operator.elementmatrix
-        println("element matrix")
-        display(Matrix(elementmatrix))
-        println("")
-
-        assembledOp = rowmodemap * elementmatrix * columnmodemap
-
-        denseOp = Matrix(assembledOp)
-        println("assembled op\n")
-        display(denseOp)
-        println("")
-        invOp = pinv(denseOp) # Neumann operator
-
-        #symbolmatrixnodes = zeros(ComplexF64, numberrows, numbercolumns)
-
-        preconditioner.operatorinverse = invOp
+        preconditioner.operatorinverse = pinv(Matrix(elementmatrix))
     end
 
     # return
@@ -220,9 +204,31 @@ end
 ```
 """
 function computesymbols(preconditioner::Schwarz, ω::Array, θ::Array)
+
+    rowmodemap = preconditioner.operator.rowmodemap
+    columnmodemap = preconditioner.operator.columnmodemap
+    dimension = preconditioner.operator.dimension
+    elementmatrix = preconditioner.operator.elementmatrix
     Minv = preconditioner.operatorinverse
+    nodecoordinatedifferences = preconditioner.operator.nodecoordinatedifferences
+    numberrows, numbercolumns = size(Minv)
+
+    #symbolmatrixnodes = zeros(ComplexF64, numberrows, numbercolumns)
+    #for i = 1:numberrows, j = 1:numbercolumns
+    #    symbolmatrixnodes[i, j] =
+    #        Minv[i, j] *
+    #        ℯ^(im * sum([θ[k] * nodecoordinatedifferences[i, j, k] for k = 1:dimension]))
+    #end
+    #symbolmatrixmodes = rowmodemap * symbolmatrixnodes * columnmodemap
+    #symbolmatrixmodes = rowmodemap * Minv * columnmodemap
+
+    # try with true inverse...
+    assembledOp = rowmodemap * elementmatrix * columnmodemap
+    invOp = pinv(assembledOp)
+
+
     A = computesymbols(preconditioner.operator, θ)
-    return I - Minv * A
+    return I - invOp * A
 end
 
 # ------------------------------------------------------------------------------

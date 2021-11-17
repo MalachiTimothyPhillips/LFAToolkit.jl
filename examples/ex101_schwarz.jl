@@ -6,7 +6,7 @@ using LFAToolkit
 using LinearAlgebra
 
 # setup
-mesh = Mesh1D(2)
+mesh = Mesh1D(1.0)
 p = 2
 
 # diffusion operator
