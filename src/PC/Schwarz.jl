@@ -138,7 +138,7 @@ function getoperatorinverse(preconditioner::Schwarz)
 
         ## try with true inverse...
         assembledOp = rowmodemap * elementmatrix * columnmodemap
-        invOp = pinv(assembledOp)
+        invOp = pinv(Matrix(assembledOp))
         preconditioner.operatorinverse = invOp
     end
 
