@@ -121,13 +121,21 @@ function getoperatorinverse(preconditioner::Schwarz)
         rowmodemap = preconditioner.operator.rowmodemap
         columnmodemap = preconditioner.operator.columnmodemap
         elementmatrix = preconditioner.operator.elementmatrix
+        println("element matrix")
+        display(Matrix(elementmatrix))
+        println("")
 
         assembledOp = rowmodemap * elementmatrix * columnmodemap
 
         denseOp = Matrix(assembledOp)
+        println("assembled op\n")
+        display(denseOp)
+        println("")
         invOp = pinv(denseOp) # Neumann operator
 
-        preconditioner.operatorinverse = sparse(invOp)
+        #symbolmatrixnodes = zeros(ComplexF64, numberrows, numbercolumns)
+
+        preconditioner.operatorinverse = invOp
     end
 
     # return

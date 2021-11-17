@@ -366,7 +366,7 @@ function TensorH1LagrangeBasis(
     numberquadraturepoints1d::Int,
     numbercomponents::Int,
     dimension::Int;
-    lagrangequadrature::Bool = false,
+    lagrangequadrature::Bool = true, # MTP: want GLL points
 )
     # check inputs
     if numbernodes1d < 2

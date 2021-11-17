@@ -6,8 +6,8 @@ using LFAToolkit
 using LinearAlgebra
 
 # setup
-mesh = Mesh2D(1.0, 1.0)
-p = 4
+mesh = Mesh1D(2)
+p = 2
 
 # diffusion operator
 diffusion = GalleryOperator("diffusion", p + 1, p + 1, mesh)
@@ -15,8 +15,8 @@ diffusion = GalleryOperator("diffusion", p + 1, p + 1, mesh)
 schwarz = Schwarz(diffusion)
 
 # compute operator symbols
-A = computesymbols(schwarz, [], [π, π])
+A = computesymbols(schwarz, [], [π])
 eigenvalues = real(eigvals(A))
-println(eigenvalues)
+#println(eigenvalues)
 
 # ------------------------------------------------------------------------------
