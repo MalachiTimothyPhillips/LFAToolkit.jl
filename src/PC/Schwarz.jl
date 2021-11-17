@@ -236,7 +236,7 @@ function computesymbols(preconditioner::Schwarz, ω::Array, θ::Array)
     symbolmatrixnodes = zeros(ComplexF64, numberrows, numbercolumns)
     for i = 1:numberrows, j = 1:numbercolumns
         symbolmatrixnodes[i, j] =
-            ℯ^(im * sum([θ[k] * nodecoordinatedifferences[i, j, k] for k = 1:dimension]))
+            ℯ^(-im * sum([θ[k] * nodecoordinatedifferences[i, j, k] for k = 1:dimension]))
     end
     symbolmatrixmodes = rowmodemap * symbolmatrixnodes * columnmodemap
 
