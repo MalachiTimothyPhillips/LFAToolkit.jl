@@ -225,22 +225,20 @@ end
 """
 function computesymbols(preconditioner::Schwarz, ω::Array, θ::Array)
 
-    #rowmodemap = preconditioner.operator.rowmodemap
-    #columnmodemap = preconditioner.operator.columnmodemap
-    #dimension = preconditioner.operator.dimension
-    #elementmatrix = preconditioner.operator.elementmatrix
+    rowmodemap = preconditioner.operator.rowmodemap
+    columnmodemap = preconditioner.operator.columnmodemap
+    dimension = preconditioner.operator.dimension
+    elementmatrix = preconditioner.operator.elementmatrix
     Minv = preconditioner.operatorinverse
-    #nodecoordinatedifferences = preconditioner.operator.nodecoordinatedifferences
-    #numberrows, numbercolumns = size(Minv)
+    nodecoordinatedifferences = preconditioner.operator.nodecoordinatedifferences
+    numberrows, numbercolumns = size(elementmatrix)
 
-    ##symbolmatrixnodes = zeros(ComplexF64, numberrows, numbercolumns)
-    ##for i = 1:numberrows, j = 1:numbercolumns
-    ##    symbolmatrixnodes[i, j] =
-    ##        Minv[i, j] *
-    ##        ℯ^(im * sum([θ[k] * nodecoordinatedifferences[i, j, k] for k = 1:dimension]))
-    ##end
-    ##symbolmatrixmodes = rowmodemap * symbolmatrixnodes * columnmodemap
-    ##symbolmatrixmodes = rowmodemap * Minv * columnmodemap
+    symbolmatrixnodes = zeros(ComplexF64, numberrows, numbercolumns)
+    for i = 1:numberrows, j = 1:numbercolumns
+        symbolmatrixnodes[i, j] =
+            ℯ^(im * sum([θ[k] * nodecoordinatedifferences[i, j, k] for k = 1:dimension]))
+    end
+    symbolmatrixmodes = rowmodemap * symbolmatrixnodes * columnmodemap
 
     ## try with true inverse...
     #assembledOp = rowmodemap * elementmatrix * columnmodemap
@@ -248,7 +246,7 @@ function computesymbols(preconditioner::Schwarz, ω::Array, θ::Array)
 
 
     A = computesymbols(preconditioner.operator, θ)
-    return I - Minv * A
+    return I - symbolmatrixmodes * Minv * A
 end
 
 # ------------------------------------------------------------------------------
