@@ -119,7 +119,27 @@ function getoperatorinverse(preconditioner::Schwarz)
     # assemble if needed
     if !isdefined(preconditioner, :operatorinverse)
         elementmatrix = preconditioner.operator.elementmatrix
-        preconditioner.operatorinverse = pinv(Matrix(elementmatrix))
+        rowmodemap = preconditioner.operator.rowmodemap
+        columnmodemap = preconditioner.operator.columnmodemap
+        #dimension = preconditioner.operator.dimension
+        #elementmatrix = preconditioner.operator.elementmatrix
+        #Minv = preconditioner.operatorinverse
+        #nodecoordinatedifferences = preconditioner.operator.nodecoordinatedifferences
+        #numberrows, numbercolumns = size(Minv)
+
+        ##symbolmatrixnodes = zeros(ComplexF64, numberrows, numbercolumns)
+        ##for i = 1:numberrows, j = 1:numbercolumns
+        ##    symbolmatrixnodes[i, j] =
+        ##        Minv[i, j] *
+        ##        ℯ^(im * sum([θ[k] * nodecoordinatedifferences[i, j, k] for k = 1:dimension]))
+        ##end
+        ##symbolmatrixmodes = rowmodemap * symbolmatrixnodes * columnmodemap
+        ##symbolmatrixmodes = rowmodemap * Minv * columnmodemap
+
+        ## try with true inverse...
+        assembledOp = rowmodemap * elementmatrix * columnmodemap
+        invOp = pinv(assembledOp)
+        preconditioner.operatorinverse = invOp
     end
 
     # return
@@ -205,30 +225,30 @@ end
 """
 function computesymbols(preconditioner::Schwarz, ω::Array, θ::Array)
 
-    rowmodemap = preconditioner.operator.rowmodemap
-    columnmodemap = preconditioner.operator.columnmodemap
-    dimension = preconditioner.operator.dimension
-    elementmatrix = preconditioner.operator.elementmatrix
+    #rowmodemap = preconditioner.operator.rowmodemap
+    #columnmodemap = preconditioner.operator.columnmodemap
+    #dimension = preconditioner.operator.dimension
+    #elementmatrix = preconditioner.operator.elementmatrix
     Minv = preconditioner.operatorinverse
-    nodecoordinatedifferences = preconditioner.operator.nodecoordinatedifferences
-    numberrows, numbercolumns = size(Minv)
+    #nodecoordinatedifferences = preconditioner.operator.nodecoordinatedifferences
+    #numberrows, numbercolumns = size(Minv)
 
-    #symbolmatrixnodes = zeros(ComplexF64, numberrows, numbercolumns)
-    #for i = 1:numberrows, j = 1:numbercolumns
-    #    symbolmatrixnodes[i, j] =
-    #        Minv[i, j] *
-    #        ℯ^(im * sum([θ[k] * nodecoordinatedifferences[i, j, k] for k = 1:dimension]))
-    #end
-    #symbolmatrixmodes = rowmodemap * symbolmatrixnodes * columnmodemap
-    #symbolmatrixmodes = rowmodemap * Minv * columnmodemap
+    ##symbolmatrixnodes = zeros(ComplexF64, numberrows, numbercolumns)
+    ##for i = 1:numberrows, j = 1:numbercolumns
+    ##    symbolmatrixnodes[i, j] =
+    ##        Minv[i, j] *
+    ##        ℯ^(im * sum([θ[k] * nodecoordinatedifferences[i, j, k] for k = 1:dimension]))
+    ##end
+    ##symbolmatrixmodes = rowmodemap * symbolmatrixnodes * columnmodemap
+    ##symbolmatrixmodes = rowmodemap * Minv * columnmodemap
 
-    # try with true inverse...
-    assembledOp = rowmodemap * elementmatrix * columnmodemap
-    invOp = pinv(assembledOp)
+    ## try with true inverse...
+    #assembledOp = rowmodemap * elementmatrix * columnmodemap
+    #invOp = pinv(assembledOp)
 
 
     A = computesymbols(preconditioner.operator, θ)
-    return I - invOp * A
+    return I - Minv * A
 end
 
 # ------------------------------------------------------------------------------
