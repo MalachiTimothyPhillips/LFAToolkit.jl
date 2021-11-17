@@ -495,7 +495,8 @@ function getdiagonal(operator::Operator)
 
         # compute
         diagonalnodes = Diagonal(elementmatrix)
-        diagonalmodes = Diagonal(rowmodemap * diagonalnodes * columnmodemap)
+        #diagonalmodes = Diagonal(rowmodemap * diagonalnodes * columnmodemap)
+        diagonalmodes = Diagonal(rowmodemap * elementmatrix * columnmodemap)
 
         # store
         operator.diagonal = diagonalmodes
