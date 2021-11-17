@@ -54,7 +54,7 @@ plot(
 ylims!(min(0.0, eigenvalues...) * 1.1, max(eigenvalues...) * 1.1)
 savefig("schwarz_spectrum_2")
 
-if false
+if true
   ## Schwrz, p=4
   # setup
   p = 4
