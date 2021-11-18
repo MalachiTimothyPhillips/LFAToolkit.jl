@@ -50,4 +50,4 @@ plot(
     palette=palette(:tab10)
 )
 ylims!(min(0.0, eigenvalues...) * 1.1, max(eigenvalues...) * 1.1)
-savefig("asm_spectrum_2")
+savefig("asm_spectrum_7")
