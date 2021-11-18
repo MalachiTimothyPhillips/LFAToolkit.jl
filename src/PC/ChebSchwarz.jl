@@ -50,7 +50,7 @@ mutable struct ChebSchwarz <: AbstractPreconditioner
 
     # data empty until assembled
     eigenvalueestimates::Array{Float64,1}
-    operatorinverse::AbstractArray{Float64}
+    operatorinverse::AbstractArray{Float64,2}
 
     # inner constructor
     ChebSchwarz(operator::Operator) = new(operator, [0.0, 0.1, 0.0, 1.0])
