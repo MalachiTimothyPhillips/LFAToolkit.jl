@@ -16,10 +16,10 @@ finediffusion = GalleryOperator("diffusion", finep+1, finep+1, mesh)
 coarsediffusion = GalleryOperator("diffusion", coarsep+1, finep+1, mesh)
 
 # Chebyshev smoother
-jacobi = Jacobi(finediffusion)
+nos = Schwarz(finediffusion)
 
 # p-multigrid preconditioner
-multigrid = PMultigrid(finediffusion, coarsediffusion, jacobi, [ctofbasis])
+multigrid = PMultigrid(finediffusion, coarsediffusion, nos, [ctofbasis])
 
 
 # full operator symbols
@@ -57,8 +57,8 @@ plot(
     ylabel="λ",
     linewidth=3,
     legend=:none,
-    title="Spectrum of Jacobi Symbol",
+    title="Spectrum of NOS Symbol",
     palette=palette(:tab10)
 )
 ylims!(min(0.0, eigenvalues...) * 1.1, max(eigenvalues...) * 1.1)
-savefig("pmg_jacobi_spectrum_4_1")
+savefig("pmg_nos_spectrum_4_1")

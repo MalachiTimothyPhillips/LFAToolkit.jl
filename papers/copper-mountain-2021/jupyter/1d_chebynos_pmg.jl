@@ -16,10 +16,10 @@ finediffusion = GalleryOperator("diffusion", finep+1, finep+1, mesh)
 coarsediffusion = GalleryOperator("diffusion", coarsep+1, finep+1, mesh)
 
 # Chebyshev smoother
-jacobi = Jacobi(finediffusion)
+chebnos = ChebSchwarz(finediffusion)
 
 # p-multigrid preconditioner
-multigrid = PMultigrid(finediffusion, coarsediffusion, jacobi, [ctofbasis])
+multigrid = PMultigrid(finediffusion, coarsediffusion, chebnos, [ctofbasis])
 
 
 # full operator symbols
@@ -32,7 +32,7 @@ maxeigenvalue = 0
 
 # compute and plot smoothing factor
 # setup
-ω = [2.0/3.0]
+ω = [3]
 eigenvalues = zeros(numbersteps, finep)
 
 # compute
@@ -57,8 +57,8 @@ plot(
     ylabel="λ",
     linewidth=3,
     legend=:none,
-    title="Spectrum of Jacobi Symbol",
+    title="Spectrum of Cheb-NOS(3) Symbol",
     palette=palette(:tab10)
 )
 ylims!(min(0.0, eigenvalues...) * 1.1, max(eigenvalues...) * 1.1)
-savefig("pmg_jacobi_spectrum_4_1")
+savefig("pmg_chebnos3_spectrum_4_1")
