@@ -69,7 +69,7 @@ mutable struct Schwarz <: AbstractPreconditioner
     operator::Operator
 
     # data empty until assembled
-    operatorinverse::AbstractArray{Float64}
+    operatorinverse::AbstractArray{Float64,2}
 
     # inner constructor
     Schwarz(operator::Operator) = new(operator)
