@@ -44,6 +44,7 @@ export IdentityPC
 export NoPreco
 export Jacobi
 export Schwarz
+export ASM
 export ChebSchwarz, seteigenvalueestimatescalingchebschwarz
 export Chebyshev, seteigenvalueestimatescaling
 # -- multigrid
@@ -72,6 +73,7 @@ include("PC/Identity.jl")
 include("PC/NoPreco.jl")
 include("PC/Jacobi.jl")
 include("PC/Schwarz.jl")
+include("PC/ASM.jl")
 include("PC/Chebyshev.jl")
 include("PC/ChebSchwarz.jl")
 # -- multigrid

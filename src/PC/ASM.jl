@@ -69,9 +69,11 @@ mutable struct ASM <: AbstractPreconditioner
     operator::Operator
 
     # data empty until assembled
-    subdomaininverse::AbstractArray{Float64}
+    subdomaininverse::AbstractArray{Float64, 2}
 
-    subdomaininverse::AbstractArray{Float64}
+    Qs::AbstractArray{Float64, 2}
+
+    extendednodecoordinatedifferences::AbstractArray{Float64}
 
     # inner constructor
     ASM(operator::Operator) = new(operator)
@@ -130,8 +132,12 @@ function getsubdomaininverse(preconditioner::ASM)
         overlappingop[2:Nqe-1,2:Nqe-1] = elementmatrix
         overlappingop[1:2,1:2] += elementmatrix[p:Nq,p:Nq]
         overlappingop[pe:Nqe,pe:Nqe] += elementmatrix[1:2,1:2]
-        
+
         subdomaininverse = pinv(overlappingop)
+        println("assembling ASM inverse")
+        display(subdomaininverse)
+        println("")
+        
 
         preconditioner.subdomaininverse = subdomaininverse
     end
@@ -142,7 +148,7 @@ end
 
 function getQs(preconditioner::ASM)
     # assemble if needed
-    if !isdefined(preconditioner, :subdomaininverse)
+    if !isdefined(preconditioner, :Qs)
         # WARNING: hard-coded to 1d
         elementmatrix = preconditioner.operator.elementmatrix
         Nq, _ = size(elementmatrix)
@@ -151,9 +157,10 @@ function getQs(preconditioner::ASM)
         pe = Nqe-1
 
         Qs = zeros(Nqe,Nq)
-        Qs[1,Nqe-1] = 1.0
+        Qs[1,Nq-1] = 1.0
         Qs[Nqe,2] = 1.0
-        Qs[2:Nqe-1,1:Nq] = eye(Nq)
+        identityMat = Matrix{Float64}(I, Nq, Nq)
+        Qs[2:Nqe-1,1:Nq] = identityMat[:,:]
 
         preconditioner.Qs = Qs
     end
@@ -166,22 +173,15 @@ function getextendednodecoordinatedifferences(preconditioner::ASM)
     # assemble if needed
     if !isdefined(preconditioner, :extendednodecoordinatedifferences)
         # WARNING: hard-coded to 1d
-        elementmatrix = preconditioner.operator.elementmatrix
-        Nq, _ = size(elementmatrix)
-        p = Nq-1
-        Nqe = Nq+2
-        pe = Nqe-1
-
-        Qs = zeros(Nqe,Nq)
-        Qs[1,Nqe-1] = 1.0
-        Qs[Nqe,2] = 1.0
-        Qs[2:Nqe-1,1:Nq] = eye(Nq)
-
-        preconditioner.Qs = Qs
+        nodecoordinatedifferences = preconditioner.operator.nodecoordinatedifferences
+        numberrows, numbercolumns, dimension = size(nodecoordinatedifferences)
+        distances = zeros(numberrows, numbercolumns)
+        distances[:,:] = nodecoordinatedifferences[:,:,1]
+        preconditioner.extendednodecoordinatedifferences = preconditioner.Qs * distances
     end
 
     # return
-    return getfield(preconditioner, :Qs)
+    return getfield(preconditioner, :extendednodecoordinatedifferences)
 end
 
 # ------------------------------------------------------------------------------
@@ -193,6 +193,8 @@ function Base.getproperty(preconditioner::ASM, f::Symbol)
         return getsubdomaininverse(preconditioner)
     elseif f == :Qs
         return getQs(preconditioner)
+    elseif f == :extendednodecoordinatedifferences
+        return getextendednodecoordinatedifferences(preconditioner)
     else
         return getfield(preconditioner, f)
     end
@@ -270,16 +272,17 @@ function computesymbols(preconditioner::ASM, ω::Array, θ::Array)
     dimension = preconditioner.operator.dimension
     elementmatrix = preconditioner.operator.elementmatrix
     Minv = preconditioner.subdomaininverse
-    nodecoordinatedifferences = preconditioner.operator.nodecoordinatedifferences
-    numberrows, numbercolumns = size(elementmatrix)
+    Qs = preconditioner.Qs
+    extendednodecoordinatedifferences = preconditioner.extendednodecoordinatedifferences
+    numberrows, numbercolumns = size(Minv)
 
     symbolmatrixnodes = zeros(ComplexF64, numberrows, numbercolumns)
     for i = 1:numberrows, j = 1:numbercolumns
         symbolmatrixnodes[i, j] =
             Minv[i, j] *
-            ℯ^(im * sum([θ[k] * nodecoordinatedifferences[i, j, k] for k = 1:dimension]))
+            ℯ^(im * sum([θ[k] * extendednodecoordinatedifferences[i, j] for k = 1:dimension]))
     end
-    symbolmatrixmodes = rowmodemap * symbolmatrixnodes * columnmodemap
+    symbolmatrixmodes = rowmodemap * Qs' * symbolmatrixnodes * Qs * columnmodemap
 
     A = computesymbols(preconditioner.operator, θ)
     return I - symbolmatrixmodes * A
