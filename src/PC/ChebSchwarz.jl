@@ -115,16 +115,8 @@ diagonalinverse = chebyshev.operatorinverse;
 function getoperatorinverse(preconditioner::ChebSchwarz)
     # assemble if needed
     if !isdefined(preconditioner, :operatorinverse)
-        rowmodemap = preconditioner.operator.rowmodemap
-        columnmodemap = preconditioner.operator.columnmodemap
         elementmatrix = preconditioner.operator.elementmatrix
-
-        assembledOp = rowmodemap * elementmatrix * columnmodemap
-
-        denseOp = Matrix(assembledOp)
-        invOp = pinv(denseOp) # Neumann operator, for, .e.g, Poisson
-
-        preconditioner.operatorinverse = sparse(invOp)
+        preconditioner.operatorinverse = pinv(Matrix(elementmatrix))
     end
 
     # return
@@ -160,6 +152,25 @@ eigenvalueestimates = LFAToolkit.geteigenvalueestimates(chebyshev);
 
 ```
 """
+function computeSchwarzSymbol(preconditioner::ChebSchwarz, θ::Array)
+    rowmodemap = preconditioner.operator.rowmodemap
+    columnmodemap = preconditioner.operator.columnmodemap
+    dimension = preconditioner.operator.dimension
+    elementmatrix = preconditioner.operator.elementmatrix
+    Minv = preconditioner.operatorinverse
+    nodecoordinatedifferences = preconditioner.operator.nodecoordinatedifferences
+    numberrows, numbercolumns = size(elementmatrix)
+
+    symbolmatrixnodes = zeros(ComplexF64, numberrows, numbercolumns)
+    for i = 1:numberrows, j = 1:numbercolumns
+        symbolmatrixnodes[i, j] =
+            Minv[i, j] *
+            ℯ^(im * sum([θ[k] * nodecoordinatedifferences[i, j, k] for k = 1:dimension]))
+    end
+    symbolmatrixmodes = rowmodemap * symbolmatrixnodes * columnmodemap
+    return symbolmatrixmodes
+end
+
 function geteigenvalueestimates(preconditioner::ChebSchwarz)
     # assemble if needed
     if !isdefined(preconditioner, :eigenvalueestimates)
@@ -172,22 +183,25 @@ function geteigenvalueestimates(preconditioner::ChebSchwarz)
         # compute eigenvalues
         if dimension == 1
             for θ_x in θ_range
+                S = computeSchwarzSymbol(preconditioner, [θ_x])
                 A = computesymbols(preconditioner.operator, [θ_x])
-                eigenvalues = abs.(eigvals(preconditioner.operatorinverse * A),)
+                eigenvalues = abs.(eigvals(S * A),)
                 λ_min = min(λ_min, eigenvalues...)
                 λ_max = max(λ_max, eigenvalues...)
             end
         elseif dimension == 2
             for θ_x in θ_range, θ_y in θ_range
+                S = computeSchwarzSymbol(preconditioner, [θ_x, θ_y])
                 A = computesymbols(preconditioner.operator, [θ_x, θ_y])
-                eigenvalues = abs.(eigvals(preconditioner.operatorinverse * A),)
+                eigenvalues = abs.(eigvals(S * A),)
                 λ_min = min(λ_min, eigenvalues...)
                 λ_max = max(λ_max, eigenvalues...)
             end
         elseif dimension == 3
             for θ_x in θ_range, θ_y in θ_range, θ_z in θ_range
+                S = computeSchwarzSymbol(preconditioner, [θ_x, θ_y, θ_z])
                 A = computesymbols(preconditioner.operator, [θ_x, θ_y, θ_z])
-                eigenvalues = abs.(eigvals(preconditioner.operatorinverse * A),)
+                eigenvalues = abs.(eigvals(S * A),)
                 λ_min = min(λ_min, eigenvalues...)
                 λ_max = max(λ_max, eigenvalues...)
             end
@@ -380,7 +394,7 @@ function computesymbols(preconditioner::ChebSchwarz, ω::Array, θ::Array)
         λ_max * preconditioner.eigenvaluebounds[4]
 
     # compute ChebSchwarz smoother of given degree
-    D_inv = preconditioner.operatorinverse
+    D_inv = computeSchwarzSymbol(preconditioner, θ)
     D_inv_A = D_inv * A
     k = ω[1] # degree of ChebSchwarz smoother
     α = (upper + lower) / 2
