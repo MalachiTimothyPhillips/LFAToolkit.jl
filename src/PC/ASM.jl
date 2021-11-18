@@ -260,7 +260,7 @@ function computesymbols(preconditioner::ASM, ω::Array, θ::Array)
     for i = 1:numberrows, j = 1:numbercolumns
         symbolmatrixnodes[i, j] =
             Minv[i, j] *
-            ℯ^(im * sum([θ[k] * nodecoordinatedifferences[indices[i], indices[j]] for k = 1:dimension]))
+            ℯ^(im * sum([θ[k] * nodecoordinatedifferences[indices[i], indices[j], k] for k = 1:dimension]))
     end
     symbolmatrixmodes = rowmodemap * Qs' * symbolmatrixnodes * Qs * columnmodemap
 
