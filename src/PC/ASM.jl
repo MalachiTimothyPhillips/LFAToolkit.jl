@@ -73,8 +73,6 @@ mutable struct ASM <: AbstractPreconditioner
 
     Qs::AbstractArray{Float64, 2}
 
-    extendednodecoordinatedifferences::AbstractArray{Float64}
-
     # inner constructor
     ASM(operator::Operator) = new(operator)
 end
@@ -134,10 +132,6 @@ function getsubdomaininverse(preconditioner::ASM)
         overlappingop[pe:Nqe,pe:Nqe] += elementmatrix[1:2,1:2]
 
         subdomaininverse = pinv(overlappingop)
-        println("assembling ASM inverse")
-        display(subdomaininverse)
-        println("")
-        
 
         preconditioner.subdomaininverse = subdomaininverse
     end
@@ -169,21 +163,6 @@ function getQs(preconditioner::ASM)
     return getfield(preconditioner, :Qs)
 end
 
-function getextendednodecoordinatedifferences(preconditioner::ASM)
-    # assemble if needed
-    if !isdefined(preconditioner, :extendednodecoordinatedifferences)
-        # WARNING: hard-coded to 1d
-        nodecoordinatedifferences = preconditioner.operator.nodecoordinatedifferences
-        numberrows, numbercolumns, dimension = size(nodecoordinatedifferences)
-        distances = zeros(numberrows, numbercolumns)
-        distances[:,:] = nodecoordinatedifferences[:,:,1]
-        preconditioner.extendednodecoordinatedifferences = preconditioner.Qs * distances
-    end
-
-    # return
-    return getfield(preconditioner, :extendednodecoordinatedifferences)
-end
-
 # ------------------------------------------------------------------------------
 # get/set property
 # ------------------------------------------------------------------------------
@@ -193,8 +172,6 @@ function Base.getproperty(preconditioner::ASM, f::Symbol)
         return getsubdomaininverse(preconditioner)
     elseif f == :Qs
         return getQs(preconditioner)
-    elseif f == :extendednodecoordinatedifferences
-        return getextendednodecoordinatedifferences(preconditioner)
     else
         return getfield(preconditioner, f)
     end
@@ -273,14 +250,17 @@ function computesymbols(preconditioner::ASM, ω::Array, θ::Array)
     elementmatrix = preconditioner.operator.elementmatrix
     Minv = preconditioner.subdomaininverse
     Qs = preconditioner.Qs
-    extendednodecoordinatedifferences = preconditioner.extendednodecoordinatedifferences
+    nodecoordinatedifferences = preconditioner.operator.nodecoordinatedifferences
     numberrows, numbercolumns = size(Minv)
+    Nq = numberrows-2
+
+    indices = [Nq-1, 1:Nq..., 2]
 
     symbolmatrixnodes = zeros(ComplexF64, numberrows, numbercolumns)
     for i = 1:numberrows, j = 1:numbercolumns
         symbolmatrixnodes[i, j] =
             Minv[i, j] *
-            ℯ^(im * sum([θ[k] * extendednodecoordinatedifferences[i, j] for k = 1:dimension]))
+            ℯ^(im * sum([θ[k] * nodecoordinatedifferences[indices[i], indices[j]] for k = 1:dimension]))
     end
     symbolmatrixmodes = rowmodemap * Qs' * symbolmatrixnodes * Qs * columnmodemap
 

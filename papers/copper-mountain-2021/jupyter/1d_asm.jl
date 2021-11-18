@@ -3,7 +3,7 @@ using LFAToolkit
 using LinearAlgebra
 using Plots
 # setup
-p = 2
+p = 7
 dimension = 1
 mesh = Mesh1D(1.0)
 
